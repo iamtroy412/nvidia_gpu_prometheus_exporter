@@ -20,6 +20,8 @@ var (
 	addr = flag.String("web.listen-address", ":9445", "Address to listen on for web interface and telemetry.")
 
 	labels = []string{"minor_number", "uuid", "name"}
+
+	isFanSpeedEnabled = flag.Bool("fanspeed", true, "Enable collection of fan speed metrics.")
 )
 
 type Collector struct {
@@ -179,11 +181,13 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 			c.temperature.WithLabelValues(minor, uuid, name).Set(float64(temperature))
 		}
 
-		fanSpeed, err := dev.FanSpeed()
-		if err != nil {
-			log.Printf("FanSpeed() error: %v", err)
-		} else {
-			c.fanSpeed.WithLabelValues(minor, uuid, name).Set(float64(fanSpeed))
+		if *isFanSpeedEnabled {
+			fanSpeed, err := dev.FanSpeed()
+			if err != nil {
+				log.Printf("FanSpeed() error: %v", err)
+			} else {
+				c.fanSpeed.WithLabelValues(minor, uuid, name).Set(float64(fanSpeed))
+			}
 		}
 	}
 	c.usedMemory.Collect(ch)
